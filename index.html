@@ -94,13 +94,10 @@ function initTerminal(){
   loadScene('start');
 }
 
-async function getBrowserName() {
+function getBrowserName() {
     const ua = navigator.userAgent;
-
-    // Brave check (must be awaited)
     try {
-        if (navigator.brave && await navigator.brave.isBrave()) {return "Brave";}} 
-    catch (e) {}
+        if (navigator.brave && typeof navigator.brave.isBrave()) {return "Brave";}} catch (e) {}
     if (ua.includes("OPR") || ua.includes("Opera")) return "Opera";
     if (ua.includes("Edg")) return "Microsoft Edge";
     if (ua.includes("Firefox")) return "Mozilla Firefox";
