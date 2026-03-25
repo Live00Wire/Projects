@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>live00wire.dev - Blackjack OS (Large)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap');
+        
+        :root {
+            --term-bg: #0d1117;
+            --term-window: #161b22;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-gold: #d29922;
+            --border: #30363d;
+        }
+
+        body { 
+            background-color: var(--term-bg); 
+            color: #c9d1d9; 
+            font-family: 'Fira Code', monospace; 
+            overflow-x: hidden; 
+            transition: opacity 0.4s ease-in-out, padding 0.3s ease; 
+        }
+        
+        body.fullscreen-active { padding: 0 !important; }
+
+        .terminal-container { 
+            background-color: var(--term-window); 
+            border: 1px solid var(--border); 
+            position: relative; 
+            transition: all 0.3s ease;
+        }
+
+        .fullscreen-mode {
+            max-width: 100% !important;
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0 !important;
+            border: none !important;
+            display: flex;
+            flex-direction: column;
+        }
+        .fullscreen-mode .p-10 {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        @keyframes dealIn {
+            0% { transform: translateY(-50px) rotate(-10deg); opacity: 0; }
+            100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+        }
+
+        .card { 
+            background-color: var(--term-bg); 
+            border: 1px solid var(--border); 
+            animation: dealIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+
+        .streak-glow { text-shadow: 0 0 12px var(--accent-gold); color: var(--accent-gold); }
+
+        .btn-bet {
+            padding: 6px 12px; 
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .btn-bet:hover { border-color: var(--accent-blue); background: rgba(88, 166, 255, 0.1); }
+
+        .btn-action { 
+            border: 1px solid var(--border); 
+            padding: 12px 28px; 
+            font-size: 1rem; 
+            font-weight: 500;
+            transition: all 0.2s; 
+        }
+        .btn-action:not(:disabled):hover { 
+            background: var(--border); 
+            color: var(--accent-blue);
+            box-shadow: 0 0 15px rgba(88, 166, 255, 0.15);
+        }
+
+        .btn-close, .btn-max { transition: all 0.2s ease; cursor: pointer; }
+        .btn-close:hover { background-color: #ff3b30 !important; transform: scale(1.1); box-shadow: 0 0 8px rgba(255, 59, 48, 0.5); }
+        .btn-max:hover { background-color: #34d058 !important; transform: scale(1.1); box-shadow: 0 0 8px rgba(39, 201, 63, 0.5); }
+
+        .typewriter {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--accent-blue);
+            animation: typing 1s steps(30, end), blink 0.7s step-end infinite;
+        }
+
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink { from, to { border-color: transparent } 50% { border-color: var(--accent-blue); } }
+    </style>
+</head>
+<body class="p-4 md:p-12 min-h-screen flex items-center justify-center">
+
+    <div id="terminal-window" class="terminal-container w-full max-w-5xl rounded-lg overflow-hidden border shadow-2xl">
+        <div class="bg-[#21262d] px-5 py-3 flex items-center justify-between border-b border-[#30363d]">
+            <div class="flex gap-3">
+                <div onclick="closeTerminal()" title="Close Terminal" class="btn-close w-4 h-4 rounded-full bg-[#ff5f56]"></div>
+                <div class="w-4 h-4 rounded-full bg-[#ffbd2e]"></div>
+                <div onclick="toggleFullscreen()" title="Maximize" class="btn-max w-4 h-4 rounded-full bg-[#27c93f]"></div>
+            </div>
+            <div id="streak-display" class="text-xs opacity-50 tracking-widest">STREAK: 0</div>
+        </div>
+
+        <div class="p-10">
+            <div class="mb-10 text-base h-12">
+                <span class="text-green-400">guest@live00wire</span>:<span class="text-blue-400">~</span>$ ./blackjack.sh<br>
+                <div id="status-container"><span id="game-status" class="text-yellow-400 opacity-80 mt-1 inline-block">System ready.</span></div>
+            </div>
+
+            <div class="mb-12">
+                <div class="text-xs text-red-400 mb-3 opacity-50 tracking-widest">HOST_TARGET [SCORE: <span id="dealer-score" class="font-bold">?</span>]</div>
+                <div id="dealer-hand" class="flex gap-5 h-40"></div>
+            </div>
+
+            <div class="mb-12 flex-grow">
+                <div class="text-xs text-blue-400 mb-3 opacity-50 tracking-widest">LOCAL_USER [SCORE: <span id="player-score" class="font-bold">0</span>]</div>
+                <div id="player-hand" class="flex gap-5 h-40"></div>
+            </div>
+
+            <div class="flex flex-col md:flex-row items-end md:items-center justify-between border-t border-gray-800 pt-10 mt-auto gap-8">
+                
+                <div id="betting-controls" class="flex flex-col gap-3">
+                    <div class="text-xs opacity-40 uppercase tracking-wide">Memory_Allocation (Bet)</div>
+                    <div class="flex items-center gap-4">
+                        <button onclick="adjustBet(-50)" class="btn-bet">-50</button>
+                        <span class="text-3xl font-bold text-white w-20 text-center" id="current-bet">50</span>
+                        <button onclick="adjustBet(50)" class="btn-bet">+50</button>
+                        <button onclick="adjustBet('max')" class="btn-bet text-xs">MAX</button>
+                    </div>
+                </div>
+
+                <div class="flex gap-5">
+                    <button onclick="startGame()" id="btn-deal" class="btn-action text-green-400 border-green-900/40">exec --deal</button>
+                    <button onclick="hit()" id="btn-hit" class="btn-action hidden text-blue-400">hit()</button>
+                    <button onclick="stand()" id="btn-stand" class="btn-action hidden text-red-400">stand()</button>
+                </div>
+
+                <div class="text-right">
+                    <div class="text-xs opacity-40 uppercase tracking-wide">Total_Data_Pool</div>
+                    <div class="text-4xl font-bold text-blue-400" id="balance">1000<span class="text-lg ml-1 font-normal opacity-50">GB</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let deck = [], playerHand = [], dealerHand = [], balance = 1000, currentBet = 50, streak = 0, gameOver = false;
+
+        function toggleFullscreen() {
+            document.getElementById('terminal-window').classList.toggle('fullscreen-mode');
+            document.body.classList.toggle('fullscreen-active');
+        }
+        
+        function closeTerminal() {
+            updateStatus("SIGTERM Received. Terminating...");
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                window.location.href = 'index.html'; 
+            }, 400);
+        }
+
+        function updateStatus(text) {
+            const container = document.getElementById('status-container');
+            container.innerHTML = `<span id="game-status" class="text-yellow-400 typewriter">${text}</span>`;
+        }
+
+        function adjustBet(amount) {
+            if (amount === 'max') currentBet = balance;
+            else currentBet = Math.max(50, Math.min(balance, currentBet + amount));
+            document.getElementById('current-bet').innerText = currentBet;
+        }
+
+        function createDeck() {
+            const suits = ['✦', '◆', '▲', '●'], values = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+            deck = [];
+            for (let s of suits) for (let v of values) deck.push({suit: s, value: v});
+            deck.sort(() => Math.random() - 0.5);
+        }
+
+        function getScore(hand) {
+            let score = 0, aces = 0;
+            for (let card of hand) {
+                if (['J','Q','K'].includes(card.value)) score += 10;
+                else if (card.value === 'A') { score += 11; aces++; }
+                else score += parseInt(card.value);
+            }
+            while (score > 21 && aces > 0) { score -= 10; aces--; }
+            return score;
+        }
+
+        function renderCard(card, index, isHidden = false) {
+            const delay = index * 0.1;
+            const content = isHidden ? 
+                `<div class="m-auto text-3xl opacity-20 italic">0x??</div>` : 
+                `<div class="flex justify-between w-full text-xs font-bold"><span>${card.suit}</span><span>${card.value}</span></div>
+                 <div class="m-auto text-5xl">${card.suit}</div>
+                 <div class="text-right w-full text-[10px] opacity-40">${card.value}</div>`;
+
+            return `<div class="card w-28 h-40 rounded-md p-4 flex flex-col shadow-xl" style="animation-delay: ${delay}s">${content}</div>`;
+        }
+
+        function startGame() {
+            if (balance < currentBet) return updateStatus("[ERR] Insufficient data in pool.");
+            
+            balance -= currentBet;
+            updateDisplay();
+            createDeck();
+            
+            playerHand = [deck.pop(), deck.pop()];
+            dealerHand = [deck.pop(), deck.pop()];
+            gameOver = false;
+            
+            toggleUI(true);
+            updateUI();
+            updateStatus(`Allocation of ${currentBet}GB confirmed. Node active.`);
+        }
+
+        function hit() {
+            playerHand.push(deck.pop());
+            updateUI();
+            if (getScore(playerHand) > 21) resolveGame('lose', "OVERFLOW: Score exceeded 21.");
+        }
+
+        function stand() {
+            gameOver = true;
+            while (getScore(dealerHand) < 17) dealerHand.push(deck.pop());
+            
+            const p = getScore(playerHand), d = getScore(dealerHand);
+            if (d > 21 || p > d) resolveGame('win', `SUCCESS: Host breached. +${currentBet * 2}GB`);
+            else if (p < d) resolveGame('lose', "FAILURE: Host maintained encryption.");
+            else resolveGame('push', "STALE: Connection balanced. Bet returned.");
+        }
+
+        function resolveGame(result, msg) {
+            gameOver = true;
+            if (result === 'win') {
+                balance += (currentBet * 2);
+                streak++;
+            } else if (result === 'push') {
+                balance += currentBet;
+                streak = 0;
+            } else {
+                streak = 0;
+            }
+            
+            toggleUI(false);
+            updateUI();
+            updateStatus(msg);
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('balance').innerHTML = `${balance}<span class="text-lg ml-1 font-normal opacity-50">GB</span>`;
+            const streakEl = document.getElementById('streak-display');
+            streakEl.innerText = `STREAK: ${streak}`;
+            streakEl.className = streak >= 3 ? "text-xs tracking-widest streak-glow" : "text-xs opacity-50 tracking-widest";
+            
+            if (balance < 50 && !gameOver) {
+                updateStatus("[SYSTEM_FAILURE] Data pool exhausted. Reload to reset.");
+                document.getElementById('btn-deal').disabled = true;
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('player-hand').innerHTML = playerHand.map((c, i) => renderCard(c, i)).join('');
+            document.getElementById('dealer-hand').innerHTML = dealerHand.map((c, i) => renderCard(c, i, !gameOver && i === 1)).join('');
+            document.getElementById('player-score').innerText = getScore(playerHand);
+            document.getElementById('dealer-score').innerText = gameOver ? getScore(dealerHand) : '?';
+        }
+
+        function toggleUI(inGame) {
+            document.getElementById('btn-deal').classList.toggle('hidden', inGame);
+            document.getElementById('btn-hit').classList.toggle('hidden', !inGame);
+            document.getElementById('btn-stand').classList.toggle('hidden', !inGame);
+            document.getElementById('betting-controls').style.opacity = inGame ? "0.3" : "1";
+            document.getElementById('betting-controls').style.pointerEvents = inGame ? "none" : "auto";
+        }
+    </script>
+</body>
+</html>
