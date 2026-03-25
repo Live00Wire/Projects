@@ -94,16 +94,15 @@ function initTerminal(){
   loadScene('start');
 }
 
-function getBrowserName() {
+function getBrowserNameSync() {
     const ua = navigator.userAgent;
-    const brave = navigator.brave.isBrave.name
-    if (brave.includes("isBrave")) return "Brave";
+    if (navigator.brave && typeof navigator.brave.isBrave === 'function') {return "Brave";}
     if (ua.includes("OPR")) return "Opera";
     if (ua.includes("Firefox")) return "Mozilla Firefox";
     if (ua.includes("Edg")) return "Microsoft Edge";
     if (ua.includes("Chrome")) return "Google Chrome";
     if (ua.includes("Safari")) return "Apple Safari";
-    return "Web Browser";
+    return "Unknown Browser";
 }
 
 const scenes={};
