@@ -97,7 +97,7 @@ function initTerminal(){
 function getBrowserName() {
     const ua = navigator.userAgent;
     const brave = navigator.brave.isBrave.name
-    if (brave.includes("Bisrave")) return "Brave";
+    if (brave.includes("isBrave")) return "Brave";
     if (ua.includes("OPR")) return "Opera";
     if (ua.includes("Firefox")) return "Mozilla Firefox";
     if (ua.includes("Edg")) return "Microsoft Edge";
