@@ -7,23 +7,30 @@
 <title>Live00Wire Dev</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Doto:wght@100..900&display=swap');
-body{ background:#0a0f0a; color:#33ff66; font-family:'Doto', sans-serif; display:flex; justify-content:center; padding:40px; margin:0; }
-#terminal{ width:900px; max-width:95%; background:#000; border:2px solid #33ff66; padding:25px; box-shadow:0 0 20px #33ff66; overflow:hidden; position:relative; }
-h1{ margin-top:0; font-size: 1.2rem; }
-.choice{ display:none; background:black; border:1px solid #33ff66; color:#33ff66; padding:10px; margin-top:5px; text-align:left; cursor:pointer; }
-.choice.visible{ display:block; }
-.choice:hover{ background:#33ff66; color:black; }
-#log{ min-height:200px; white-space:pre; overflow-x: auto; line-height: 1.4; }
-#inputLine{ margin-top:10px; }
-#choices{ margin-top:5px; }
-.cursor{ display:inline-block; width:10px; height:18px; background:#33ff66; margin-left:4px; animation:blink 1s infinite; }
-@keyframes blink{ 50%{opacity:0} }
-#footer{ margin-top:25px; font-size:12px; opacity:.7; }
-#matrixCanvas{ position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events: none; }
+body { background:#0a0f0a; color:#33ff66; font-family:'Doto', sans-serif; display:flex; justify-content:center; padding:40px; margin:0; }
+#terminal { width:900px; max-width:95%; background:#000; border:2px solid #33ff66; padding:25px; box-shadow:0 0 20px #33ff66; overflow:hidden; position:relative; }
+h1 { margin-top:0; font-size: 1.2rem; }
+.choice { display:none; background:black; border:1px solid #33ff66; color:#33ff66; padding:10px; margin-top:5px; text-align:left; cursor:pointer; }
+.choice.visible { display:block; }
+.choice:hover { background:#33ff66; color:black; }
+#log { min-height:200px; white-space:pre; overflow-x: auto; line-height: 1.4; }
+#inputLine { margin-top:10px; }
+#choices { margin-top:5px; }
+.cursor { display:inline-block; width:10px; height:18px; background:#33ff66; margin-left:4px; animation:blink 1s infinite; }
+@keyframes blink { 50%{opacity:0} }
+#footer { margin-top:25px; font-size:12px; opacity:.7; }
+#matrixCanvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events: none; }
 #terminalTitle { visibility: hidden; }
 #terminalUI { opacity: 0; transition: opacity 1.5s ease-in-out; }
 #terminalUI.visible, #terminalTitle.visible { visibility: visible; opacity: 1; }
-a{ color:#33ff66; text-decoration:underline; font-weight: bold; }
+a { color:#33ff66; text-decoration:underline; font-weight: bold; }
+@media (max-width: 768px) {
+    body { padding: 10px; }
+    #terminal { width: 100%; max-width: 100%; padding: 15px; border-width: 1px; }
+    #log { font-size: 14px; }
+    h1 { font-size: 1rem; }
+    .choice { padding: 15px; margin-top: 10px; }
+}
 </style>
 </head>
 <body>
@@ -44,6 +51,7 @@ const choicesDiv = document.getElementById('choices');
 const canvas = document.getElementById('matrixCanvas');
 const ctx = canvas.getContext('2d');
 const startTime = Date.now();
+const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
 
 canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
 const cols = Math.floor(canvas.width / 20);
@@ -96,54 +104,29 @@ function initTerminal(){
 
 function getBrowserName() {
     const ua = navigator.userAgent;
-    try {
-        if (navigator.brave && typeof navigator.brave.isBrave()) {return "Brave";}} catch (e) {}
+    try { if (navigator.brave && typeof navigator.brave.isBrave()) {return "Brave";}} catch (e) {}
     if (ua.includes("OPR") || ua.includes("Opera")) return "Opera";
     if (ua.includes("Edg")) return "Microsoft Edge";
     if (ua.includes("Firefox")) return "Mozilla Firefox";
     if (ua.includes("Chrome")) return "Google Chrome";
     if (ua.includes("Safari")) return "Apple Safari";
-
     return "Web Browser";
 }
 
 const scenes={};
 const projectsData=[
-  { 
-    name:"Blackjack", 
-    url: "blackjack.html", 
-    description:"Small blackjack game inspired by emacs", 
-    updates:[
-        { date:"2026-03-26", content:"Created project, basic functionality" },
-        /* { date:"YYYY-MM-DD", content:"PLACEHOLDER UPDATE 2" } */
-    ] 
-  },
-  { 
-    name:"project2", 
-    url: "project2.html", 
-    description:"PLACEHOLDER DESCRIPTION", 
-        updates:[
-        { date:"YYYY-MM-DD", content:"PLACEHOLDER UPDATE 1" },
-        { date:"YYYY-MM-DD", content:"PLACEHOLDER UPDATE 2" }
-    ] 
-  }
+  { name:"Blackjack", url: "blackjack.html", description:"Small blackjack game inspired by emacs", updates:[{ date:"2026-03-26", content:"Created project, basic functionality" }] },
+  { name:"Music", url: "music.html", description:"A simple music page for browsing and listening to my music", updates:[{ date:"2026-03-26", content:"Created Music Page" }] }
 ];
 
 function buildProjects(){
   scenes.start={id:'start', text:`Location: /home/user\n\nWelcome. Use 'help' to begin.`,choices:[{text:"Projects",next:"projects"},{text:"About",next:"about"},{text:"Contact",next:"contact"}]};
   scenes.about={id:'about', text:`Location: /home/user/about\n\nName: Live00Wire \nFocus: Random Insanity \nI do alot of things, i hope you like them!`,choices:[{text:"Return",next:"start"}]};
   scenes.contact={id:'contact', text:`Location: /home/user/contact\n\nEmail: `,choices:[{text:"Return",next:"start"}]};
-
   projectsData.forEach((proj,i)=>{
     const projectId=`project_${i}`;
     const readmeId=`project_${i}_readme`;
-    
-    scenes[readmeId] = {
-        id: readmeId,
-        text: `File: README.txt\n----------------\n${proj.description}`,
-        choices: [{text:"Return", next: projectId}]
-    };
-
+    scenes[readmeId] = { id: readmeId, text: `File: README.txt\n----------------\n${proj.description}`, choices: [{text:"Return", next: projectId}] };
     let projectDirView = `Location: /home/user/projects/${proj.name.toLowerCase()}\n\nREADME.txt\nLAUNCH_PROJECT.exe\n`;
     const updateChoices = proj.updates.map((u,j)=>{
       const logId = `project_${i}_update_${j}`;
@@ -151,25 +134,14 @@ function buildProjects(){
       scenes[logId]={id:logId, text:`Update Log: ${u.date}\n------------------\n${u.content}`,choices:[{text:"Return",next:projectId}]};
       return {text: u.date + ".log", next: logId};
     });
-
-    scenes[projectId]={
-        id:projectId, 
-        text: `${projectDirView}\nType 'cat [filename]' or select a file below.`, 
-        choices: [
-            {text: "README.txt", next: readmeId},
-            {text: "LAUNCH_PROJECT.exe", next: proj.url},
-            ...updateChoices,
-            {text:"Return",next:"projects"}
-        ]
-    };
+    scenes[projectId]={ id:projectId, text: `${projectDirView}\nType 'cat [filename]' or select a file below.`, choices: [{text: "README.txt", next: readmeId}, {text: "LAUNCH_PROJECT.exe", next: proj.url}, ...updateChoices, {text:"Return",next:"projects"}] };
   });
-  
   let dirOutput = "Location: /home/user/projects\n\n" + projectsData.map(p => p.name + "/").join("\n");
   scenes.projects={id:'projects', text:dirOutput + "\n\nSelect a folder or 'cd ..'",choices:projectsData.map((p,i)=>({text:p.name,next:`project_${i}`})).concat([{text:"Return",next:"start"}])};
 }
 buildProjects();
 
-let currentChoices=[],typedCommand="",typing=false,buttonsVisible=false,currentSceneId='start';
+let currentChoices=[], typedCommand="", typing=false, buttonsVisible = isMobile, currentSceneId='start';
 let commandHistory = [], historyIndex = -1;
 
 function updateTyped(){document.getElementById("typed").innerText=typedCommand;}
@@ -214,50 +186,20 @@ function loadScene(id){
 
 const knownCommands = {
   help:{text:"Available Commands:\n- ls:          List files\n- cd [path]:   Change directory\n- cat [file]:  Read file\n- neofetch:    System info\n- clear:       Clear screen\n- reboot:      Restart system\n- showbuttons: Enable UI buttons\n- hidebuttons: Disable UI buttons"},
-  
-  ls: {
-      execute: () => {
-          let items = [];
-          if (currentSceneId === 'start') items = ["projects/", "about/", "contact/"];
-          else if (currentSceneId === 'projects') items = projectsData.map(p => p.name.toLowerCase() + "/");
-          else if (currentSceneId.startsWith('project_') && !currentSceneId.includes('update') && !currentSceneId.includes('readme')) {
-              const idx = currentSceneId.split('_')[1];
-              items = ["README.txt", "LAUNCH_PROJECT.exe"].concat(projectsData[idx].updates.map(u => u.date + ".log"));
-          } else return "Empty directory.";
-          return items.join("\n");
-      }
-  },
-  neofetch: {
-    execute: () => {
-        const uptime = Math.floor((Date.now() - startTime) / 1000);
-        return `
-████████████████████████████████████████████
-████████████████████████████████████████████
-████████████████████████████████████████████
-███████████████████████████░░░░░████████████
-███████████████████████████░░░░░████████████
-██░░░██████████████████████░░░░░████████████
-██░░░░░░░░█████████████████░░░░░████████████
-███░░░░░░░░░░░█████████████░░░░░████████████
-████████░░░░░░░░███████████░░░░░████████████
-████████░░░░░░░░███████████░░░░░████████████
-███░░░░░░░░░░░█████████████░░░░░████████████
-██░░░░░░░░█████████████████░░░░░████████████
-██░░░██████████████████████░░░░░░░░░░░░░░░██
-███████████████████████████░░░░░░░░░░░░░░░██
-████████████████████████████████████████████
-████████████████████████████████████████████
-████████████████████████████████████████████
-
-USER:    guest@dev-terminal
-OS:      ${navigator.platform}
-KERNEL:  custom-js-kernel v3.5
-UPTIME:  ${uptime}s
-BROWSER: ${getBrowserName()}
-SHELL:   custom-js-shell
-        `;
-    }
-  },
+  ls: { execute: () => {
+      let items = [];
+      if (currentSceneId === 'start') items = ["projects/", "about/", "contact/"];
+      else if (currentSceneId === 'projects') items = projectsData.map(p => p.name.toLowerCase() + "/");
+      else if (currentSceneId.startsWith('project_') && !currentSceneId.includes('update') && !currentSceneId.includes('readme')) {
+          const idx = currentSceneId.split('_')[1];
+          items = ["README.txt", "LAUNCH_PROJECT.exe"].concat(projectsData[idx].updates.map(u => u.date + ".log"));
+      } else return "Empty directory.";
+      return items.join("\n");
+  }},
+  neofetch: { execute: () => {
+      const uptime = Math.floor((Date.now() - startTime) / 1000);
+      return `USER: guest@dev-terminal\nOS: ${navigator.platform}\nKERNEL: custom-js-kernel v3.5\nUPTIME: ${uptime}s\nBROWSER: ${getBrowserName()}\nSHELL: custom-js-shell`;
+  }},
   showbuttons: { text: "UI Elements: ENABLED", action: () => { buttonsVisible = true; document.querySelectorAll('.choice').forEach(c => c.classList.add('visible')); }},
   hidebuttons: { text: "UI Elements: DISABLED", action: () => { buttonsVisible = false; document.querySelectorAll('.choice').forEach(c => c.classList.remove('visible')); }},
   clear:{text:"", action:()=>{ log.innerText = "Buffer Cleared.\nReady."; }},
@@ -271,7 +213,6 @@ function tryCommand(){
   const parts = fullCmd.split(' ');
   const cmd = parts[0];
   const arg = parts[1];
-
   if(cmd === 'cat' && arg) {
       if(currentSceneId.startsWith('project_')) {
           const idx = currentSceneId.split('_')[1];
@@ -286,7 +227,6 @@ function tryCommand(){
       } else log.innerText = `cat: ${arg}: Not a readable file here.`;
       typedCommand=''; updateTyped(); return;
   }
-
   if(cmd === 'cd') {
     if(!arg || arg === '..' || arg === 'home') {
         if (currentSceneId.startsWith('project_')) loadScene('projects');
@@ -304,17 +244,14 @@ function tryCommand(){
     }
     typedCommand=''; updateTyped(); return;
   }
-
   if(knownCommands[cmd]){
     const result = knownCommands[cmd].execute ? knownCommands[cmd].execute() : knownCommands[cmd].text;
     typeToLog(result, () => { if(knownCommands[cmd].action) knownCommands[cmd].action(); });
     typedCommand=''; updateTyped(); return;
   }
-  
   for(let choice of currentChoices){
     if(choice.text.toLowerCase() === fullCmd){ loadScene(choice.next); typedCommand=''; updateTyped(); return; }
   }
-  
   log.innerText = `Command '${cmd}' not found. Type 'help' for assistance.`;
   typedCommand=''; updateTyped();
 }
