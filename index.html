@@ -94,15 +94,20 @@ function initTerminal(){
   loadScene('start');
 }
 
-function getBrowserNameSync() {
+async function getBrowserName() {
     const ua = navigator.userAgent;
-    if (navigator.brave && typeof navigator.brave.isBrave === 'function') {return "Brave";}
-    if (ua.includes("OPR")) return "Opera";
-    if (ua.includes("Firefox")) return "Mozilla Firefox";
+
+    // Brave check (must be awaited)
+    try {
+        if (navigator.brave && await navigator.brave.isBrave()) {return "Brave";}} 
+    catch (e) {}
+    if (ua.includes("OPR") || ua.includes("Opera")) return "Opera";
     if (ua.includes("Edg")) return "Microsoft Edge";
+    if (ua.includes("Firefox")) return "Mozilla Firefox";
     if (ua.includes("Chrome")) return "Google Chrome";
     if (ua.includes("Safari")) return "Apple Safari";
-    return "Unknown Browser";
+
+    return "Web Browser";
 }
 
 const scenes={};
