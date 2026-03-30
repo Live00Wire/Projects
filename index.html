@@ -241,8 +241,8 @@ const startTime = Date.now();
 const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 const scenes = {};
 const projectsData = [
-    { name: "Coding Projects", url: "desktop/desktop.html", description: "Mock desktop environment to explore my random projects", updates: [{ date: "2026-03-26", content: "Basic functionality" }] },
-    { name: "Music", url: "construction.html", description: "Music page for browsing my tracks", updates: [{ date: "2026-03-26", content: "Created Music Page" }] }
+    { name: "Coding Projects", url: "/desktop", description: "Mock desktop environment to explore my random projects", updates: [{ date: "2026-03-26", content: "Basic functionality" }] },
+    { name: "Music", url: "/construction", description: "Music page for browsing my tracks", updates: [{ date: "2026-03-26", content: "Created Music Page" }] }
 ];
 
 let currentChoices = [];
@@ -359,13 +359,12 @@ function typeCommand(text, callback) {
 }
 
 function loadScene(id) {
-    if (id.endsWith('.html')) {
+    if (id.startsWith('/')) {
         DOM.log.innerText = "Redirecting to project layer...";
         scrollToTop();
         setTimeout(() => window.location.href = id, 800);
         return;
-    }
-    
+    } 
     currentSceneId = id;
     const scene = scenes[id];
     typedCommand = ""; 
