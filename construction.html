@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNDER CONSTRUCTION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Doto:wght@100..900&display=swap');
+
+        :root {
+            --accent-color: #00ff41;
+            --bg-color: #0a0a0a;
+            --text-muted: #888;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: 'Doto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            border-left: 2px solid var(--accent-color);
+            padding: 20px 40px;
+            max-width: 85%;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 8vw, 4.5rem);
+            letter-spacing: 2px;
+            margin: 0;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .under-construction {
+            font-weight: 700;
+            background: var(--accent-color);
+            color: var(--bg-color);
+            padding: 2px 10px;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            color: var(--text-muted);
+        }
+
+        .pulse {
+            width: 12px;
+            height: 12px;
+            background-color: #ff3e3e;
+            border-radius: 50%;
+            margin-right: 15px;
+            box-shadow: 0 0 10px #ff3e3e;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .contact-info {
+            margin-top: 35px;
+            border: 1px solid var(--accent-color);
+            padding: 20px;
+            display: inline-block;
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .contact-info h2 {
+            font-size: 0.9rem;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: underline;
+        }
+
+        .contact-item {
+            font-size: 1.1rem;
+            margin: 5px 0;
+            display: block;
+        }
+
+        .label {
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .btn-terminal {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 8px 15px;
+            border: 1px solid var(--accent-color);
+            color: var(--bg-color);
+            background-color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 900;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-terminal:hover {
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        .typing {
+            font-size: 1.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            width: 0;
+            border-right: 2px solid var(--accent-color);
+            animation: typing 3s steps(30, end) forwards, blink-caret .75s step-end infinite;
+        }
+
+        @keyframes typing { 
+            from { width: 0 } 
+            to { width: 100% } 
+        }
+        
+        @keyframes blink-caret { 
+            from, to { border-color: transparent } 
+            50% { border-color: var(--accent-color); } 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>>L</h1>
+        <div class="under-construction">SITE STATUS: UNDER CONSTRUCTION</div>
+        
+        <div class="status-row">
+            <div class="pulse"></div>
+            <span>OFFLINE_DEV_ENVIRONMENT_ACTIVE</span>
+        </div>
+
+        <div class="typing">> Initializing protocols...</div>
+
+        <div class="contact-info">
+            <h2>Connection Data</h2>
+            <div class="contact-item"><span class="label">EMAIL:</span> hello@live00wire.dev</div>
+            <div class="contact-item"><span class="label">DISCORD:</span> Live__Wire</div>
+            
+            <a href="index.html" class="btn-terminal">> RETURN_TO_TERMINAL</a>
+        </div>
+    </div>
+
+</body>
+</html>

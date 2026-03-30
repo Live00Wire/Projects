@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop Environment</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #141e30 0%, #243b55 100%);
+            --menu-bg: rgba(0, 0, 0, 0.3);
+            --text-color: #eee;
+            --dock-bg: rgba(0, 0, 0, 0.4);
+            --dropdown-border: rgba(255, 255, 255, 0.1);
+            --divider-color: rgba(255, 255, 255, 0.15);
+            --window-bg: rgba(30, 30, 30, 0.85);
+            --window-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body.light-mode {
+            --bg-gradient: linear-gradient(135deg, #fbc2eb 0%, #a18cd1 100%);
+            --menu-bg: rgba(255, 255, 255, 0.3);
+            --text-color: #111;
+            --dock-bg: rgba(255, 255, 255, 0.4);
+            --dropdown-border: rgba(0, 0, 0, 0.1);
+            --divider-color: rgba(0, 0, 0, 0.1);
+            --window-bg: rgba(250, 250, 250, 0.85);
+            --window-border: rgba(0, 0, 0, 0.2);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            overflow: hidden;
+            user-select: none;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .menu-bar {
+            height: 24px;
+            background: var(--menu-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s;
+            position: relative;
+            z-index: 5000;
+        }
+
+        .menu-left,
+        .menu-right {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .logo-btn {
+            font-weight: bold;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 24px;
+            left: 0;
+            background: var(--dock-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--dropdown-border);
+            border-radius: 6px;
+            min-width: 220px;
+            display: none;
+            flex-direction: column;
+            padding: 5px 0;
+            z-index: 5001;
+        }
+
+        .dropdown-menu.show {
+            display: flex;
+        }
+
+        .dropdown-item {
+            padding: 4px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .dropdown-item:hover {
+            background: #007aff;
+            color: white;
+        }
+
+        .dock {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dock-bg);
+            backdrop-filter: blur(16px);
+            padding: 8px 12px;
+            border-radius: 18px;
+            display: flex;
+            gap: 0px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            z-index: 4000;
+        }
+
+        .dock-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .dock-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 24px;
+            color: white;
+            border: none;
+            outline: none;
+        }
+
+        .dock-icon:hover {
+            transform: translateY(-8px) scale(1.1);
+        }
+
+        .dock-dot {
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+
+        .tooltip {
+            position: absolute;
+            top: -35px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .dock-item:hover .tooltip {
+            opacity: 1;
+        }
+
+        .app-launcher {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .launchpad {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(25px);
+            z-index: 4500;
+            display: block;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+
+        .launchpad.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lp-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            transform: scale(0.95);
+        }
+
+        .lp-view.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        .lp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 40px 20px;
+            width: 80%;
+            max-width: 900px;
+        }
+
+        .lp-app {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            color: white;
+            transition: 0.2s;
+        }
+
+        .lp-app:hover {
+            transform: scale(1.05);
+        }
+
+        .lp-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .lp-label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .icn-folder {
+            background: rgba(255, 255, 255, 0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            padding: 14px;
+            box-sizing: border-box;
+        }
+
+        .folder-mini {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .folder-header {
+            width: 80%;
+            max-width: 900px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+            color: white;
+            font-size: 28px;
+            font-weight: 500;
+        }
+
+        .folder-back {
+            cursor: pointer;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            margin-right: 20px;
+            font-size: 16px;
+        }
+
+        #window-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .os-window {
+            position: absolute;
+            background: var(--window-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--window-border);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            resize: both;
+            min-width: 300px;
+            min-height: 200px;
+            pointer-events: auto;
+        }
+
+        .os-window.show {
+            display: flex;
+        }
+
+        .os-window.maximized {
+            top: 24px !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: calc(100vh - 24px) !important;
+            border-radius: 0;
+            resize: none;
+        }
+
+        .window-header {
+            height: 28px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            background: rgba(0, 0, 0, 0.05);
+            cursor: grab;
+            position: relative;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            position: absolute;
+            left: 10px;
+        }
+
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .close-btn {
+            background: #ff5f56;
+        }
+
+        .maximize-btn {
+            background: #27c93f;
+        }
+
+        .window-title {
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-color);
+            pointer-events: none;
+        }
+
+        .app-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="menu-bar">
+        <div class="menu-left">
+            <div class="dropdown-container">
+                <div class="logo-btn" onclick="toggleLogoMenu(event)">>L</div>
+                <div class="dropdown-menu" id="logo-dropdown">
+                    <a href="#" class="dropdown-item" onclick="showAbout()">About >L</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="/index.html" class="dropdown-item">Return to Terminal</a>
+                </div>
+            </div>
+        </div>
+        <div class="menu-right">
+            <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+            <div class="menu-item" id="clock"></div>
+        </div>
+    </div>
+
+    <div id="window-container">
+        <div class="os-window" id="aboutWindow" style="top: 20%; left: 35%; width: 300px; height: 320px;">
+            <div class="window-header" id="aboutHeader">
+                <div class="window-controls">
+                    <div class="control-btn close-btn" onclick="closeStaticWindow('aboutWindow')"></div>
+                </div>
+                <div class="window-title">About</div>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <h2>>L Desktop</h2>
+                <p>Version 2.6.0</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="launchpad" id="launchpad" onclick="closeLaunchpad()">
+        <div class="lp-view active" id="view-main" onclick="event.stopPropagation()">
+            <div class="lp-grid" id="main-lp-grid"></div>
+        </div>
+    </div>
+
+    <div class="dock">
+        <div class="dock-item">
+            <span class="tooltip">Launchpad</span>
+            <div class="dock-icon app-launcher" onclick="toggleLaunchpad()">⠿</div>
+        </div>
+        <div id="dock-divider" style="width: 1px; background: rgba(255,255,255,0.2); margin: 5px 4px; display: none;">
+        </div>
+        <div id="dynamic-apps" style="display: flex; gap: 12px;"></div>
+    </div>
+
+    <script>
+
+        const SYSTEM_FOLDERS = [
+            { id: 'games', title: 'Games' },
+            { id: 'utilities', title: 'Utilities' },
+            { id: 'music', title: 'Music' }
+        ];
+
+        const APP_REGISTRY = [
+            { id: 'blackjack', title: 'Blackjack', url: 'desktop-apps/blackjack.html', folder: 'games', bg: '#1b5e20', symbol: '🃏' },
+            { id: 'sprite-studio', title: '>L Sprite Studio', url: 'desktop-apps/sprite.html', folder: 'utilities', bg: '#252526', symbol: '🎨' },
+            { id: 'sequencer', title: '>L Beat Sequencer', url: 'desktop-apps/sequencer.html', folder: 'music', bg: '#455a64', symbol: '🎵' },
+            { id: 'daw', title: '>L Music Studio Pro', url: 'desktop-apps/DAW.html', folder: 'music', bg: '#455a64', symbol: '🎶' }
+        ];
+
+        let highestZIndex = 1500;
+        let runningApps = [];
+
+        function initOS() {
+            renderLaunchpad();
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        function renderLaunchpad() {
+            const mainGrid = document.getElementById('main-lp-grid');
+            const launchpadContainer = document.getElementById('launchpad');
+            mainGrid.innerHTML = '';
+
+            SYSTEM_FOLDERS.forEach(folder => {
+                const folderApps = APP_REGISTRY.filter(app => app.folder === folder.id);
+                mainGrid.innerHTML += `
+                    <div class="lp-app" onclick="openFolder('view-${folder.id}')">
+                        <div class="lp-icon icn-folder">
+                            ${[0, 1, 2, 3].map(i => `<div class="folder-mini" style="background:${folderApps[i]?.bg || 'rgba(255,255,255,0.05)'}"></div>`).join('')}
+                        </div>
+                        <div class="lp-label">${folder.title}</div>
+                    </div>`;
+
+                let folderView = document.createElement('div');
+                folderView.className = 'lp-view';
+                folderView.id = `view-${folder.id}`;
+                folderView.onclick = (e) => e.stopPropagation();
+                folderView.innerHTML = `
+                    <div class="folder-header"><div class="folder-back" onclick="showView('view-main')">← Back</div>${folder.title}</div>
+                    <div class="lp-grid">
+                        ${folderApps.map(app => `
+                            <div class="lp-app" onclick="openApp('${app.id}')">
+                                <div class="lp-icon" style="background:${app.bg}">${app.symbol}</div>
+                                <div class="lp-label">${app.title}</div>
+                            </div>`).join('')}
+                    </div>`;
+                launchpadContainer.appendChild(folderView);
+            });
+
+            const standaloneApps = APP_REGISTRY.filter(app => !app.folder);
+            standaloneApps.forEach(app => {
+                mainGrid.innerHTML += `
+                    <div class="lp-app" onclick="openApp('${app.id}')">
+                        <div class="lp-icon" style="background:${app.bg}">${app.symbol}</div>
+                        <div class="lp-label">${app.title}</div>
+                    </div>`;
+            });
+        }
+
+        function openApp(appId) {
+            const app = APP_REGISTRY.find(a => a.id === appId);
+            if (runningApps.includes(appId)) {
+                bringToFront(document.getElementById('win-' + appId));
+            } else {
+                const win = document.createElement('div');
+                win.className = 'os-window show';
+                win.id = 'win-' + appId;
+                win.style.top = '80px'; win.style.left = '100px';
+                win.style.width = '75%'; win.style.height = '70%';
+                win.innerHTML = `
+                    <div class="window-header">
+                        <div class="window-controls"><div class="control-btn close-btn" onclick="closeApp('${appId}')"></div><div class="control-btn maximize-btn" onclick="toggleMaximize('win-${appId}')"></div></div>
+                        <div class="window-title">${app.title}</div>
+                    </div>
+                    <iframe class="app-iframe" src="${app.url}"></iframe>`;
+
+                win.addEventListener('mousedown', () => bringToFront(win));
+                document.getElementById('window-container').appendChild(win);
+                makeDraggable(win, win.querySelector('.window-header'));
+                bringToFront(win);
+
+                runningApps.push(appId);
+                updateDock();
+            }
+            closeLaunchpad();
+        }
+
+        function closeApp(id) {
+            document.getElementById('win-' + id).remove();
+            runningApps = runningApps.filter(a => a !== id);
+            updateDock();
+        }
+
+        function updateDock() {
+            const container = document.getElementById('dynamic-apps');
+            const divider = document.getElementById('dock-divider');
+            container.innerHTML = '';
+            if (runningApps.length > 0) {
+                divider.style.display = 'block';
+                runningApps.forEach(appId => {
+                    const app = APP_REGISTRY.find(a => a.id === appId);
+                    const item = document.createElement('div');
+                    item.className = 'dock-item';
+                    item.innerHTML = `
+                        <span class="tooltip">${app.title}</span>
+                        <div class="dock-icon" style="background:${app.bg}" onclick="bringToFront(document.getElementById('win-${appId}'))">${app.symbol}</div>
+                        <div class="dock-dot"></div>`;
+                    container.appendChild(item);
+                });
+            } else {
+                divider.style.display = 'none';
+            }
+        }
+
+        function bringToFront(win) {
+            highestZIndex++;
+            win.style.zIndex = highestZIndex;
+        }
+
+        function toggleLaunchpad() {
+            const lp = document.getElementById('launchpad');
+            lp.classList.toggle('active');
+            if (lp.classList.contains('active')) showView('view-main');
+        }
+
+        function closeLaunchpad() { document.getElementById('launchpad').classList.remove('active'); }
+        function openFolder(id) { showView(id); }
+        function showView(id) {
+            document.querySelectorAll('.lp-view').forEach(v => v.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function updateClock() {
+            document.getElementById('clock').textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).replace(/,/g, '');
+        }
+
+        function toggleTheme() { document.body.classList.toggle('light-mode'); }
+        function toggleLogoMenu(e) { e.stopPropagation(); document.getElementById('logo-dropdown').classList.toggle('show'); }
+        function showAbout() { document.getElementById('aboutWindow').classList.add('show'); bringToFront(document.getElementById('aboutWindow')); }
+        function closeStaticWindow(id) { document.getElementById(id).classList.remove('show'); }
+
+        window.onclick = () => document.getElementById('logo-dropdown').classList.remove('show');
+
+        function makeDraggable(win, header) {
+            let isDragging = false, offsetX, offsetY;
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+                document.querySelectorAll('iframe').forEach(f => f.style.pointerEvents = 'none');
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging || win.classList.contains('maximized')) return;
+                win.style.left = `${e.clientX - offsetX}px`;
+                win.style.top = `${e.clientY - offsetY}px`;
+            });
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                document.querySelectorAll('iframe').forEach(f => f.style.pointerEvents = 'auto');
+            });
+        }
+        function toggleMaximize(id) { document.getElementById(id).classList.toggle('maximized'); }
+
+        document.addEventListener('DOMContentLoaded', initOS);
+        makeDraggable(document.getElementById('aboutWindow'), document.getElementById('aboutHeader'));
+    </script>
+</body>
+
+</html>

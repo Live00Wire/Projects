@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>>L System Editor</title>
+    <style>
+        :root {
+            --bg-main: #1e1e1e;
+            --bg-panel: #1e1e1e;
+            --bg-titlebar: #2d2d2d;
+            --bg-tab-inactive: #252526;
+            --bg-tab-active: #1e1e1e;
+            
+            --fg-main: #d4d4d4;
+            --fg-dim: #858585;
+            
+            --border-color: #3c3c3c;
+            --border-light: #555555;
+            
+            --syntax-blue: #569cd6;
+            --syntax-teal: #4ec9b0;
+            --syntax-green: #b5cea8;
+            --syntax-orange: #ce9178;
+            --syntax-yellow: #dcdcaa;
+            --syntax-comment: #6a9955;
+            --syntax-error: #f14c4c;
+            --syntax-warn: #cca700;
+            
+            --btn-bg: #094771;
+            --btn-hover: #0e639c;
+            --btn-disabled: #4d4d4d;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--fg-main);
+            font-family: 'Consolas', 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .title-bar {
+            background-color: var(--bg-titlebar);
+            color: var(--fg-dim);
+            font-size: 12px;
+            text-align: center;
+            padding: 6px 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-bar {
+            display: flex;
+            background-color: var(--bg-tab-inactive);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            background-color: var(--bg-tab-active);
+            color: var(--syntax-orange);
+            padding: 8px 20px;
+            font-size: 13px;
+            border-top: 2px solid var(--syntax-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .tab::before { content: "JS"; color: #f5de19; font-weight: bold; font-size: 11px; }
+
+        .editor-container {
+            flex-grow: 1;
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            overflow-y: auto;
+        }
+
+        .game-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-left: 15px;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .code-line { margin-bottom: 4px; }
+        .comment { color: var(--syntax-comment); }
+        .keyword { color: var(--syntax-blue); }
+        .variable { color: var(--syntax-blue); }
+        
+        .score-box {
+            background: rgba(86, 156, 214, 0.1);
+            border: 1px solid var(--syntax-blue);
+            color: var(--syntax-blue);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .memory-blocks {
+            display: flex;
+            gap: 40px;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 5px;
+            width: fit-content;
+        }
+
+        .mem-block { font-size: 16px; }
+        .mem-block .val-credit { color: var(--syntax-green); font-weight: bold; font-size: 20px; }
+        .mem-block .val-wager { 
+            color: #f5de19; 
+            font-weight: bold; 
+            font-size: 20px; 
+            text-shadow: 0 0 8px rgba(245, 222, 25, 0.3);
+        }
+
+        .cards-container { display: flex; gap: 15px; min-height: 110px; }
+
+        .card {
+            width: 75px;
+            height: 110px;
+            background-color: #252526;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            color: var(--fg-main);
+            position: relative;
+        }
+
+        .card.red-suit { color: var(--syntax-orange); } 
+        .card.black-suit { color: var(--fg-main); }     
+
+        .card .val-top { text-align: left; font-size: 16px; font-weight: bold; }
+        .card .suit-mid { text-align: center; font-size: 32px; flex-grow: 1; display: flex; align-items: center; justify-content: center; }
+        .card .val-bot { text-align: right; font-size: 16px; font-weight: bold; transform: rotate(180deg); }
+
+        .card.hidden {
+            background: repeating-linear-gradient(45deg, #2d2d2d, #2d2d2d 5px, #1e1e1e 5px, #1e1e1e 10px);
+            border-color: var(--border-light);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .card.hidden > div { display: none; }
+
+        .controls { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px; }
+        .control-group { display: flex; gap: 8px; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); }
+
+        button {
+            background-color: var(--btn-bg);
+            color: white;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            padding: 8px 18px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        button:hover:not(:disabled) { background-color: var(--btn-hover); }
+        button:active:not(:disabled) { transform: scale(0.97); }
+        button:disabled { background-color: var(--bg-main); border-color: var(--btn-disabled); color: var(--btn-disabled); cursor: not-allowed; }
+
+        .btn-secondary { background-color: transparent; border-color: var(--border-light); }
+        .btn-secondary:hover:not(:disabled) { background-color: rgba(255,255,255,0.1); }
+
+        .panel {
+            height: 220px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-tabs {
+            display: flex;
+            gap: 24px;
+            padding: 10px 20px 0 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 11px;
+            color: var(--fg-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-tab { cursor: pointer; padding-bottom: 8px; border-bottom: 1px solid transparent; }
+        .panel-tab.active { color: var(--fg-main); border-bottom: 1px solid var(--syntax-blue); }
+
+        .terminal-output {
+            padding: 12px 20px;
+            font-size: 13px;
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .term-line { display: flex; gap: 8px; line-height: 1.4; }
+        .term-prompt { color: var(--syntax-green); }
+        .term-path { color: var(--syntax-blue); }
+        
+        .log-info { color: var(--fg-main); }
+        .log-success { color: var(--syntax-green); font-weight: bold; }
+        .log-error { color: var(--syntax-error); font-weight: bold; }
+        .log-warn { color: var(--syntax-warn); }
+
+    </style>
+</head>
+<body>
+
+    <div class="title-bar">>L System IDE - Active Environment</div>
+    <div class="tab-bar">
+        <div class="tab">blackjack.js</div>
+    </div>
+
+    <div class="editor-container">
+        
+        <div class="game-section" style="border-left: none; padding-left: 0;">
+            <div class="code-line"><span class="comment">// SYSTEM_MEMORY</span></div>
+            <div class="memory-blocks">
+                <div class="mem-block">
+                    <span class="keyword">let</span> <span class="variable">credits</span> = <span class="val-credit" id="balance-display">100</span>;
+                </div>
+                <div class="mem-block">
+                    <span class="keyword">let</span> <span class="variable">wager</span> = <span class="val-wager" id="bet-display">0</span>;
+                </div>
+            </div>
+        </div>
+
+        <div class="game-section">
+            <div class="section-header">
+                <span class="comment">// DEALER HAND</span>
+                <span class="score-box" id="dealer-score">?</span>
+            </div>
+            <div class="cards-container" id="dealer-cards"></div>
+        </div>
+
+        <div class="game-section">
+            <div class="section-header">
+                <span class="comment">// PLAYER HAND</span>
+                <span class="score-box" id="player-score">0</span>
+            </div>
+            <div class="cards-container" id="player-cards"></div>
+        </div>
+
+        <div class="game-section" style="border-left: none; padding-left: 0;">
+            <div class="code-line"><span class="comment">// EXECUTION CONTROLS</span></div>
+            
+            <div class="controls" id="betting-area">
+                <div class="control-group">
+                    <button class="btn-secondary" onclick="addBet(10); window.scrollTo(0, 0);">+ $10</button>
+                    <button class="btn-secondary" onclick="addBet(50); window.scrollTo(0, 0);">+ $50</button>
+                    <button class="btn-secondary" onclick="addBet(100); window.scrollTo(0, 0);">+ $100</button>
+                    <button class="btn-secondary" onclick="maxBet(); window.scrollTo(0, 0);" style="color: var(--syntax-blue);">Max Bet</button>
+                    <button class="btn-secondary" onclick="resetBet(); window.scrollTo(0, 0);" style="color: var(--syntax-orange);">Clear</button>
+                </div>
+                <button onclick="startGame(); window.scrollTo(0, 0);" id="deal-btn" disabled>Deal Cards</button>
+            </div>
+
+            <div class="controls" id="game-actions" style="display: none;">
+                <button onclick="hit(); window.scrollTo(0, 0);">Hit</button>
+                <button class="btn-secondary" id="double-btn" onclick="doubleDown(); window.scrollTo(0, 0);" style="color: var(--syntax-teal);">Double Down</button>
+                <button class="btn-secondary" onclick="stand(); window.scrollTo(0, 0);">Stand</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-tabs">
+            <div class="panel-tab active">Terminal</div>
+        </div>
+        <div class="terminal-output" id="terminal-log">
+            </div>
+    </div>
+
+    <script>
+        let deck = [];
+        let dealerHand = [];
+        let playerHand = [];
+        const suits = ['♠', '♥', '♣', '♦'];
+        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+        const STARTING_BALANCE = 100;
+        let currentBalance = STARTING_BALANCE;
+        let currentBetAmount = 0;
+        let gameActive = false;
+
+        function updateBalanceDisplay() {
+            document.getElementById('balance-display').innerText = currentBalance;
+        }
+
+        function updateBetDisplay() {
+            document.getElementById('bet-display').innerText = currentBetAmount;
+            document.getElementById('deal-btn').disabled = currentBetAmount === 0;
+        }
+
+        function printLog(msg, type = "info") {
+            const logDiv = document.getElementById('terminal-log');
+            const newLine = document.createElement('div');
+            newLine.className = 'term-line';
+            
+            let colorClass = "log-info";
+            if (type === "success") colorClass = "log-success";
+            if (type === "error") colorClass = "log-error";
+            if (type === "warn") colorClass = "log-warn";
+
+            newLine.innerHTML = `
+                <span class="term-prompt">sys@>L:</span>
+                <span class="term-path">~/app$</span>
+                <span class="${colorClass}">${msg}</span>
+            `;
+            
+            logDiv.appendChild(newLine);
+            logDiv.scrollTop = logDiv.scrollHeight; 
+        }
+
+        updateBalanceDisplay();
+        updateBetDisplay();
+        printLog("./blackjack.bin --execute");
+        printLog("System initialized. Session memory cleared. Awaiting wager.", "info");
+
+        function addBet(amount) {
+            if (gameActive) return;
+
+            if (currentBalance <= 0 && currentBetAmount === 0) {
+                printLog("OutOfMemoryException: Balance depleted. Injecting baseline 100 credits.", "warn");
+                currentBalance = STARTING_BALANCE;
+                updateBalanceDisplay();
+            }
+
+            if (currentBalance >= amount) {
+                currentBetAmount += amount;
+                currentBalance -= amount;
+                updateBalanceDisplay();
+                updateBetDisplay();
+                printLog(`Bet increased by ${amount}. Total wager: ${currentBetAmount}`);
+            } else {
+                printLog(`Error: Insufficient Credits to add ${amount}.`, "error");
+            }
+        }
+
+        function maxBet() {
+            if (gameActive || currentBalance <= 0) return;
+            let amount = currentBalance;
+            currentBetAmount += amount;
+            currentBalance -= amount;
+            updateBalanceDisplay();
+            updateBetDisplay();
+            printLog(`Max Bet executed. Added ${amount}. Total wager: ${currentBetAmount}`, "info");
+        }
+
+        function resetBet() {
+            if (gameActive || currentBetAmount === 0) return;
+            currentBalance += currentBetAmount;
+            currentBetAmount = 0;
+            updateBalanceDisplay();
+            updateBetDisplay();
+            printLog("Wager cleared. Funds returned to balance.", "warn");
+        }
+
+        function buildDeck() {
+            deck = [];
+            for (let suit of suits) {
+                for (let value of values) {
+                    let isRed = (suit === '♥' || suit === '♦');
+                    deck.push({ value, suit, isRed });
+                }
+            }
+            deck.sort(() => Math.random() - 0.5);
+        }
+
+        function getScore(hand) {
+            let score = 0;
+            let aces = 0;
+            for (let card of hand) {
+                if (card.value === 'A') { aces += 1; score += 11; }
+                else if (['J', 'Q', 'K'].includes(card.value)) { score += 10; }
+                else { score += parseInt(card.value, 10); }
+            }
+            while (score > 21 && aces > 0) { score -= 10; aces -= 1; }
+            return score;
+        }
+
+        function renderCard(card, hidden = false) {
+            if (hidden) return `<div class="card hidden"><div></div></div>`;
+            
+            let colorClass = card.isRed ? "red-suit" : "black-suit";
+            return `
+                <div class="card ${colorClass}">
+                    <div class="val-top">${card.value}</div>
+                    <div class="suit-mid">${card.suit}</div>
+                    <div class="val-bot">${card.value}</div>
+                </div>
+            `;
+        }
+
+        function updateUI(hideDealerCard = true) {
+            document.getElementById('player-cards').innerHTML = playerHand.map(c => renderCard(c)).join('');
+            document.getElementById('player-score').innerText = getScore(playerHand);
+
+            if (hideDealerCard && dealerHand.length > 0) {
+                document.getElementById('dealer-cards').innerHTML = renderCard(dealerHand[0]) + renderCard(dealerHand[1], true);
+                document.getElementById('dealer-score').innerText = "?";
+            } else {
+                document.getElementById('dealer-cards').innerHTML = dealerHand.map(c => renderCard(c)).join('');
+                document.getElementById('dealer-score').innerText = getScore(dealerHand);
+            }
+        }
+
+        function toggleUIState(playingGame) {
+            gameActive = playingGame;
+            document.getElementById('betting-area').style.display = playingGame ? 'none' : 'flex';
+            document.getElementById('game-actions').style.display = playingGame ? 'flex' : 'none';
+        }
+
+        function startGame() {
+            if (currentBetAmount === 0) return;
+
+            buildDeck();
+            playerHand = [deck.pop(), deck.pop()];
+            dealerHand = [deck.pop(), deck.pop()];
+            
+            document.getElementById('double-btn').disabled = false;
+
+            toggleUIState(true);
+            printLog(`> Executing deal... Wager locked at ${currentBetAmount}.`, "info");
+            
+            updateUI();
+            checkBlackjack();
+        }
+
+        function hit() {
+            if (!gameActive) return;
+            document.getElementById('double-btn').disabled = true; 
+            playerHand.push(deck.pop());
+            updateUI();
+            if (getScore(playerHand) > 21) endGame("Player Bust (Overflow). Wager lost.", "error");
+        }
+
+        function doubleDown() {
+            if (!gameActive || playerHand.length !== 2) return;
+            
+            if (currentBalance < currentBetAmount) {
+                printLog("Error: Insufficient Credits to Double Down.", "error");
+                return;
+            }
+
+            currentBalance -= currentBetAmount;
+            currentBetAmount *= 2;
+            updateBalanceDisplay();
+            updateBetDisplay();
+            printLog(`Double Down executed. Wager doubled to ${currentBetAmount}.`, "warn");
+
+            playerHand.push(deck.pop());
+            updateUI();
+            
+            if (getScore(playerHand) > 21) {
+                endGame("Player Bust on Double Down (Overflow). Wager lost.", "error");
+            } else {
+                stand();
+            }
+        }
+
+        function stand() {
+            if (!gameActive) return;
+            
+            document.getElementById('double-btn').disabled = true;
+
+            let dealerScore = getScore(dealerHand);
+            while (dealerScore < 17) {
+                dealerHand.push(deck.pop());
+                dealerScore = getScore(dealerHand);
+            }
+            updateUI(false);
+            
+            let playerScore = getScore(playerHand);
+            if (dealerScore > 21) endGame("Dealer Bust. You win!", "success");
+            else if (playerScore > dealerScore) endGame("Player score higher. You win!", "success");
+            else if (playerScore < dealerScore) endGame("Dealer score higher. You lose.", "error");
+            else endGame("Scores equal. Push (Tie). Wager returned.", "warn");
+        }
+
+        function checkBlackjack() {
+            let pScore = getScore(playerHand);
+            let dScore = getScore(dealerHand);
+            if (pScore === 21) {
+                updateUI(false);
+                if (dScore === 21) endGame("Dual Blackjack. Push (Tie). Wager returned.", "warn");
+                else endGame("Blackjack! 3:2 Payout.", "success", true);
+            }
+        }
+
+        function endGame(msg, type, isBlackjackWin = false) {
+            printLog(msg, type);
+            
+            if (type === "success") {
+                let payout = currentBetAmount * (isBlackjackWin ? 2.5 : 2); 
+                currentBalance += Math.floor(payout); 
+            } else if (type === "warn" && !msg.includes("Double Down")) { 
+                currentBalance += currentBetAmount; 
+            } 
+
+            updateBalanceDisplay();
+            currentBetAmount = 0; 
+            updateBetDisplay();
+            
+            toggleUIState(false); 
+            printLog("Process finished. Awaiting next wager...", "info");
+            
+            updateUI(false);
+        }
+    </script>
+</body>
+</html>
