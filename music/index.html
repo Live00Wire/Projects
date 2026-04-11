@@ -749,7 +749,7 @@
                     <div class="preview-trigger" onclick="openPreview('${title}', '${basename}', '${downloadsRaw}')">
                         <div class="record-wrapper">
                             <div class="text-cover">
-                                <img src="music/${basename}/icon.png" class="disk-icon" alt="icon">
+                                <img src="${basename}/icon.png" class="disk-icon" alt="icon">
                             </div>
                             <div class="tonearm"></div>
                         </div>
@@ -764,7 +764,7 @@
                 if (downloads.length > 0) {
                     html += `<div class="download-group">`;
                     downloads.forEach(ext => {
-                        html += `<a href="music/${basename}/${basename}.${ext.trim()}" download class="dl-badge">.${ext.trim().toUpperCase()}</a>`;
+                        html += `<a href="${basename}/${basename}.${ext.trim()}" download class="dl-badge">.${ext.trim().toUpperCase()}</a>`;
                     });
                     html += `</div>`;
                 }
@@ -781,7 +781,7 @@
                 modalTitle.textContent = `> ${title}.pdf`;
                 
                 if (downloads.includes('pdf')) {
-                    modalContent.innerHTML = `<iframe id="pdf-frame" src="music/${basename}/${basename}.pdf"></iframe>`;
+                    modalContent.innerHTML = `<iframe id="pdf-frame" src="${basename}/${basename}.pdf"></iframe>`;
                 } else {
                     modalContent.innerHTML = `
                         <div class="no-preview-msg">
@@ -904,7 +904,7 @@
                 e.stopPropagation();
                 setupWebAudio();
                 
-                audioElement.src = `music/${basename}/${basename}.mp3`;
+                audioElement.src = `${basename}/${basename}.mp3`;
                 audioElement.play();
                 
                 globalTitle.textContent = title;
